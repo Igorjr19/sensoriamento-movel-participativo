@@ -1,11 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View } from 'react-native';
-import MapView, { Marker } from 'react-native-maps';
+import { WebView } from 'react-native-webview';
 import * as Location from 'expo-location';
-import ORS_API_KEY from '../config';
 
 const MapaGuardinhas = () => {
-  const [initialRegion, setInitialRegion] = useState(null);
   const [userLocation, setUserLocation] = useState(null);
 
   useEffect(() => {
@@ -18,39 +15,39 @@ const MapaGuardinhas = () => {
 
       let location = await Location.getCurrentPositionAsync({});
       const { latitude, longitude } = location.coords;
-      const response = await fetch(`https://api.openrouteservice.org/geocode/reverse?api_key=${ORS_API_KEY}&point.lon=${longitude}&point.lat=${latitude}`);
-      
-      if (!response.ok) {
-        console.error('Failed to fetch data from Openrouteservice API');
-        const errorData = await response.text();
-        console.error('Error data:', errorData);
-        return;
-      }
-
-      const locationResponse = await response.json();
-      console.log(locationResponse);
-
-      setUserLocation({ latitude, longitude });
-      setInitialRegion({
-        latitude: locationResponse.features[0].geometry.coordinates[1],
-        longitude: locationResponse.features[0].geometry.coordinates[0],
-        latitudeDelta: 0.0922,
-        longitudeDelta: 0.0421,
-      });
+      setUserLocation({latitude, longitude});
     })();
   }, []);
 
   return (
-    <View style={{ flex: 1 }}>
-      {initialRegion && (
-        <MapView
-          style={{ flex: 1 }}
-          initialRegion={initialRegion}
-        >
-          <Marker coordinate={userLocation} />
-        </MapView>
-      )}
-    </View>
+    <WebView
+      originWhitelist={['*']}
+      source={{ html: `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>OpenStreetMap in WebView</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <style>
+              body { padding: 0; margin: 0; }
+              html, body, #map { height: 100%; width: 100%; }
+            </style>
+            <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+            <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+          </head>
+          <body>
+            <div id="map"></div>
+            <script>
+              var map = L.map('map').setView([${userLocation ? userLocation.latitude : 0}, ${userLocation ? userLocation.longitude : 0}], 13);
+              L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+              }).addTo(map);
+              L.marker([${userLocation ? userLocation.latitude : 0}, ${userLocation ? userLocation.longitude : 0}]).addTo(map);
+            </script>
+          </body>
+        </html>
+      ` }}
+    />
   );
 };
 
