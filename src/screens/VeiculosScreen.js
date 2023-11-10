@@ -10,7 +10,7 @@ const GuardinhasScreen = ({ navigation }) => {
         />
         <Button
           title="Ir para Veículos"
-          onPress={() => navigation.navigate('MapaGuardinhas')} />
+          onPress={() => navigation.navigate('MapaGuardinhas')} /> {/*Esta como MapaGuardinhas para testar*/}
       </View>
     );
 }
